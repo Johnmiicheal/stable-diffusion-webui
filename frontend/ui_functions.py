@@ -1,26 +1,37 @@
+# This file is part of sygil-webui (https://github.com/Sygil-Dev/sygil-webui/).
+
+# Copyright 2022 Sygil-Dev team.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 import re
-import sys
-import os
 import gradio as gr
 from PIL import Image, ImageFont, ImageDraw, ImageFilter, ImageOps
 from io import BytesIO
 import base64
 import re
-import yaml
 
-LOAD_SETTINGS_TXT2IMG_NAMES = [
-    "prompt", "ddim_steps", "sampler_name", "toggles", "realesrgan_model_name", "ddim_eta",
-    "n_iter", "batch_size", "cfg_scale", "seed", "height", "width", "fp", "variant_amount", "variant_seed"
-]
 
-def change_image_editor_mode(choice, cropped_image, resize_mode, width, height):
+def change_image_editor_mode(choice, cropped_image, masked_image, resize_mode, width, height):
     if choice == "Mask":
-        return [gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True)]
-    return [gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)]
+        update_image_result = update_image_mask(cropped_image, resize_mode, width, height)
+        return [gr.update(visible=False), update_image_result, gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)]
+
+    update_image_result = update_image_mask(masked_image["image"] if masked_image is not None else None, resize_mode, width, height)
+    return [update_image_result, gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)]
 
 def update_image_mask(cropped_image, resize_mode, width, height):
     resized_cropped_image = resize_image(resize_mode, cropped_image, width, height) if cropped_image else None
-    return gr.update(value=resized_cropped_image)
+    return gr.update(value=resized_cropped_image, visible=True)
 
 def toggle_options_gfpgan(selection):
     if 0 in selection:
@@ -221,4 +232,3 @@ def load_settings(*values):
         values[cbg_index] = [cbg_choices[i] for i in values[cbg_index]]
 
     return values
-
